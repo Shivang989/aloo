@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js",
+    "start": "node dist/src/index.js",
+    "dev": "tsc && node dist/src/index.js",
     "migrate": "tsc && node dist/scripts/migrate.js",
     "test": "vitest run"
   },
