@@ -3,6 +3,7 @@ export interface RuntimeEnv {
   OWNER_ID: number;
   CORE_DATABASE_URL: string;
   OPS_DATABASE_URL: string;
+  REDIS_URL?: string;
   HEALTH_PORT: number;
 }
 
@@ -10,6 +11,7 @@ export function loadRuntimeEnv(): RuntimeEnv {
   const botToken = (process.env.BOT_TOKEN || "").trim();
   const coreDbUrl = (process.env.CORE_DATABASE_URL || "").trim();
   const opsDbUrl = (process.env.OPS_DATABASE_URL || "").trim();
+  const redisUrl = (process.env.REDIS_URL || "").trim() || undefined;
   const ownerIdRaw = (process.env.OWNER_ID || "8210345021").trim();
   const healthPortRaw = (process.env.HEALTH_PORT || "3000").trim();
 
@@ -27,6 +29,7 @@ export function loadRuntimeEnv(): RuntimeEnv {
     OWNER_ID: Number(ownerIdRaw) || 8210345021,
     CORE_DATABASE_URL: coreDbUrl,
     OPS_DATABASE_URL: opsDbUrl,
+    REDIS_URL: redisUrl,
     HEALTH_PORT: Number(healthPortRaw) || 3000,
   };
 }

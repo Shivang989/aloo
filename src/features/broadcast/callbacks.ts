@@ -164,7 +164,7 @@ export async function handleBroadcastCallback(
     }
 
     await launchCampaignTx(userId, wiz.draft, audience);
-    wakeBroadcastWorker();
+    await wakeBroadcastWorker();
 
     await answerCallbackQuery(env.BOT_TOKEN, cq.id, "🚀 Broadcast started!");
     await editMessageText(
@@ -305,7 +305,7 @@ export async function handleBroadcastCallback(
   if (action === "resume") {
     const cId = parts[2];
     await setCampaignStatus(cId, "running");
-    wakeBroadcastWorker();
+    await wakeBroadcastWorker();
     await answerCallbackQuery(env.BOT_TOKEN, cq.id, "▶️ Broadcast resumed.");
     await handleBroadcastCallback(env, { ...cq, data: `bc:view:${cId}` });
     return true;

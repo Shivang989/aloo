@@ -135,7 +135,7 @@ export const forceJoinHandlers: Record<string, CommandHandler> = {
       }
 
       await upsertForceJoinRule(ctx.chatId, buttonName, link, targetChat);
-      clearGroupVerifiedCache(ctx.chatId);
+      await clearGroupVerifiedCache(ctx.chatId);
 
       await sendMessage(
         ctx.env.BOT_TOKEN,
@@ -257,7 +257,7 @@ export const forceJoinHandlers: Record<string, CommandHandler> = {
       }
 
       await deleteForceJoinRule(ctx.chatId);
-      clearGroupVerifiedCache(ctx.chatId);
+      await clearGroupVerifiedCache(ctx.chatId);
 
       await sendMessage(
         ctx.env.BOT_TOKEN,

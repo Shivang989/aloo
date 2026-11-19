@@ -1,8 +1,9 @@
 import { BotContext } from "../types/bot";
 import { RuntimeEnv } from "../types/environment";
 import { TelegramUpdate } from "../telegram/types";
-import { answerCallbackQuery } from "../telegram/messages";
+import { answerCallbackQuery, sendMessage } from "../telegram/messages";
 import { ensureUserExists, syncUserFirstName } from "../database/users";
+import { checkRateLimit } from "../database/cache";
 import { handleGroupWelcome } from "../features/start/group-welcome";
 import { handleSafeCallback } from "../features/money/protection";
 import { handleDMUICallback } from "../features/dm-menu/callbacks";
@@ -141,7 +142,7 @@ export async function routeTelegramUpdate(
   // 11. Intercept DMUI text setup
   if (await handleDMUITextInput(ctx)) return;
 
-  // 12. Command Dispatcher
+  // 12. Command Dispatcher with Redis rate-limit protection
   if (rawText.startsWith("/")) {
     const parts = rawText.split(/\s+/);
     const command = parts[0].toLowerCase().split("@")[0];
@@ -152,6 +153,21 @@ export async function routeTelegramUpdate(
 
     const handler = COMMAND_REGISTRY[command];
     if (handler) {
+      const isOwner = String(userId).trim() === String(env.OWNER_ID).trim();
+      if (!isOwner) {
+        const rate = await checkRateLimit(`rl:cmd:${userId}`, 8, 10);
+        if (!rate.allowed) {
+          await sendMessage(
+            env.BOT_TOKEN,
+            chatId,
+            "⏳ <b>Slow down!</b> Please wait a few seconds before sending more commands.",
+            undefined,
+            message.message_id
+          );
+          return;
+        }
+      }
+
       try {
         await handler(ctx);
       } catch (error) {

@@ -24,6 +24,7 @@ function startHealthServer(port: number): http.Server {
           databases: {
             aloo_core: dbHealth.core ? "connected" : "disconnected",
             aloo_ops: dbHealth.ops ? "connected" : "disconnected",
+            redis: dbHealth.redis,
           },
           node: process.version,
         })
@@ -42,7 +43,6 @@ function startHealthServer(port: number): http.Server {
 }
 
 async function startTelegramPolling(env: RuntimeEnv): Promise<void> {
-  // Remove any leftover Cloudflare webhook so getUpdates long polling receives all events
   await callTelegram(env.BOT_TOKEN, "deleteWebhook", { drop_pending_updates: false });
   console.log("Telegram long polling started.");
 
@@ -83,7 +83,12 @@ async function startTelegramPolling(env: RuntimeEnv): Promise<void> {
 async function main(): Promise<void> {
   const env = loadRuntimeEnv();
   await initDatabases(env);
-  console.log("Connected to aloo_core and aloo_ops PostgreSQL databases.");
+  const health = await checkDatabaseHealth();
+  console.log(
+    `Databases ready — aloo_core: ${health.core ? "connected" : "error"}, aloo_ops: ${
+      health.ops ? "connected" : "error"
+    }, redis: ${health.redis}`
+  );
 
   const healthServer = startHealthServer(env.HEALTH_PORT);
   startBroadcastWorker(env.BOT_TOKEN);

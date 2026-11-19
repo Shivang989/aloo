@@ -5,20 +5,20 @@ import {
   hasForceJoinRequest,
   deleteForceJoinRequest,
 } from "../../database/force-join-data";
+import {
+  cacheGetJson,
+  cacheSetJson,
+  cacheDelete,
+  cacheDeleteByPrefix,
+} from "../../database/cache";
 import { getChatMember } from "../../telegram/chats";
 import { deleteMessage, sendMessage } from "../../telegram/messages";
 import { escapeHtml } from "../../ui/fancy-text";
 
-const VERIFIED_CACHE = new Map<string, number>();
-const CACHE_TTL_MS = 60_000;
+const CACHE_TTL_SEC = 60;
 
-export function clearGroupVerifiedCache(groupId: number): void {
-  const prefix = `${groupId}:`;
-  for (const key of VERIFIED_CACHE.keys()) {
-    if (key.startsWith(prefix)) {
-      VERIFIED_CACHE.delete(key);
-    }
-  }
+export async function clearGroupVerifiedCache(groupId: number): Promise<void> {
+  await cacheDeleteByPrefix(`fsub:verified:${groupId}:`);
 }
 
 export async function handleForceSubCheck(ctx: BotContext): Promise<boolean> {
@@ -38,17 +38,16 @@ export async function handleForceSubCheck(ctx: BotContext): Promise<boolean> {
     const rule = await getForceJoinRule(ctx.chatId);
     if (!rule) return false;
 
-    const cacheKey = `${ctx.chatId}:${ctx.userId}`;
-    const cachedTime = VERIFIED_CACHE.get(cacheKey);
-    const now = Date.now();
-    if (cachedTime && now - cachedTime < CACHE_TTL_MS) {
+    const cacheKey = `fsub:verified:${ctx.chatId}:${ctx.userId}`;
+    const isVerifiedCached = await cacheGetJson<boolean>(cacheKey);
+    if (isVerifiedCached === true) {
       return false;
     }
 
     const cleanTarget = rule.target_chat.trim();
     const hasRequested = await hasForceJoinRequest(ctx.userId, cleanTarget);
     if (hasRequested) {
-      VERIFIED_CACHE.set(cacheKey, now);
+      await cacheSetJson(cacheKey, true, CACHE_TTL_SEC);
       return false;
     }
 
@@ -56,12 +55,12 @@ export async function handleForceSubCheck(ctx: BotContext): Promise<boolean> {
 
     if (check.ok) {
       if (check.isMember) {
-        VERIFIED_CACHE.set(cacheKey, now);
+        await cacheSetJson(cacheKey, true, CACHE_TTL_SEC);
         return false;
       }
 
       if (check.status === "left" || check.status === "kicked") {
-        VERIFIED_CACHE.delete(cacheKey);
+        await cacheDelete(cacheKey);
         await deleteForceJoinRequest(ctx.userId, cleanTarget);
       }
     } else {
