@@ -145,6 +145,7 @@ describe("Reply-Only /gift Command & Item Resolver", () => {
     );
     expect(sendSpy.mock.calls[0][2]).toContain("GIFT SENT SUCCESSFULLY");
     expect(sendSpy.mock.calls[0][2]).toContain("@UserA gifted 🌹 <b>Rose</b> to @UserB.");
+    expect(sendSpy.mock.calls[0][2]).not.toContain("added to");
 
     // 2. Gift Luxury Car
     await giftHandlers["/gift"](
@@ -165,6 +166,7 @@ describe("Reply-Only /gift Command & Item Resolver", () => {
     expect(sendSpy.mock.calls[1][2]).toContain("LUXURY GIFT SENT");
     expect(sendSpy.mock.calls[1][2]).toContain("BMW X5 xDrive40i");
     expect(sendSpy.mock.calls[1][2]).toContain("₹96,90,000");
+    expect(sendSpy.mock.calls[1][2]).not.toContain("added to");
 
     // 3. Insufficient Balance
     await giftHandlers["/gift"](makeGiftCtx({ update: { update_id: 7003 }, args: ["burger"] }));

@@ -22,7 +22,6 @@ export const giftHandlers: Record<string, CommandHandler> = {
     try {
       const reply = ctx.reply;
 
-      // 1. Reply-only enforcement
       if (!reply) {
         await sendMessage(
           ctx.env.BOT_TOKEN,
@@ -37,7 +36,6 @@ export const giftHandlers: Record<string, CommandHandler> = {
         return;
       }
 
-      // 2. Recipient validation
       const recipient = reply.from;
       if (!recipient || !recipient.id) {
         await sendMessage(
@@ -72,7 +70,6 @@ export const giftHandlers: Record<string, CommandHandler> = {
         return;
       }
 
-      // 3. Item query validation
       const rawQuery = ctx.args.join(" ").trim();
       if (!rawQuery) {
         await sendMessage(
@@ -127,7 +124,6 @@ export const giftHandlers: Record<string, CommandHandler> = {
         return;
       }
 
-      // 4. Atomic gift purchase & inventory transfer
       const item = resolved.item;
       const idempotencyKey = `gift_upd_${ctx.update.update_id}`;
 
@@ -164,22 +160,20 @@ export const giftHandlers: Record<string, CommandHandler> = {
         : `<a href="tg://user?id=${ctx.userId}">Player</a>`;
       const recipientDisplay = formatUserReference(recipient);
 
-      let receiptText: string;
-      if (item.category === "cars") {
-        receiptText =
-          `🎁 <b>LUXURY GIFT SENT</b>\n\n` +
-          `${senderDisplay} gifted a <b>${escapeHtml(item.name)}</b> to ${recipientDisplay}.\n\n` +
-          `Vehicle value: <b>${formatRupees(item.price_amount)}</b>\n\n` +
-          `The vehicle has been added to ${recipientDisplay}'s inventory.`;
-      } else {
-        receiptText =
-          `🎁 <b>GIFT SENT SUCCESSFULLY</b>\n\n` +
-          `${senderDisplay} gifted ${item.emoji} <b>${escapeHtml(
-            item.name
-          )}</b> to ${recipientDisplay}.\n\n` +
-          `Gift value: <b>${formatRupees(item.price_amount)}</b>\n\n` +
-          `The item has been added to ${recipientDisplay}'s inventory.`;
-      }
+      const header =
+        item.category === "cars"
+          ? "🎁 <b>LUXURY GIFT SENT</b>"
+          : "🎁 <b>GIFT SENT SUCCESSFULLY</b>";
+      const valueLabel = item.category === "cars" ? "Vehicle value" : "Gift value";
+      const giftLabel =
+        item.category === "cars"
+          ? `a <b>${escapeHtml(item.name)}</b>`
+          : `${item.emoji} <b>${escapeHtml(item.name)}</b>`;
+
+      const receiptText =
+        `${header}\n\n` +
+        `${senderDisplay} gifted ${giftLabel} to ${recipientDisplay}.\n\n` +
+        `${valueLabel}: <b>${formatRupees(item.price_amount)}</b>`;
 
       await sendMessage(
         ctx.env.BOT_TOKEN,

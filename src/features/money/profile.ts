@@ -1,39 +1,45 @@
 import { BotContext, CommandHandler } from "../../types/bot";
-import { getUser } from "../../database/users";
-import { createStatusCard } from "../../ui/status-card";
+import { ensureUserExists, getUser } from "../../database/users";
+import { formatGenderLabel } from "../../database/profile-admin";
+import { getPlayerNetWorth } from "../../database/investments-and-bank";
+import { formatRupees } from "./market-pricing";
+import { escapeHtml } from "../../ui/fancy-text";
 import { sendMessage } from "../../telegram/messages";
-import { formatRemainingTime } from "./protection";
 
 const handleProfile: CommandHandler = async (ctx: BotContext) => {
-  const user = await getUser(ctx.userId);
+  const targetUser = ctx.reply?.from && !ctx.reply.from.is_bot ? ctx.reply.from : ctx.message.from;
+  if (!targetUser || !targetUser.id) return;
+
+  await ensureUserExists(targetUser.id, targetUser.first_name);
+  const [user, nw] = await Promise.all([
+    getUser(targetUser.id),
+    getPlayerNetWorth(targetUser.id),
+  ]);
+
   if (!user) return;
 
   const now = Math.floor(Date.now() / 1000);
-  const isSafe = user.protected_until && user.protected_until > now;
+  const safeActive = user.protected_until > now;
+  const displayName = escapeHtml(targetUser.first_name || user.first_name || "Player");
+  const genderLabel = formatGenderLabel(user.gender);
 
-  const card = createStatusCard({
-    title: "👤 UNDERWORLD DOSSIER",
-    rows: [
-      { label: "👤 PLAYER", value: ctx.message.from?.first_name || "Player" },
-      { label: "🆔 UID", value: ctx.userId },
-      { label: "💰 CASH", value: `₹${user.balance}` },
-      { label: "🔫 AMMO", value: `${user.ammo ?? 0} rounds` },
-      { label: "💀 KILLS", value: user.kills ?? 0 },
-      {
-        label: "🛡️ SAFE VAULT",
-        value: isSafe ? formatRemainingTime(user.protected_until - now) : "INACTIVE",
-      },
-      { label: "❤️ STATUS", value: user.is_alive === 0 ? "ELIMINATED" : "ALIVE" },
-    ],
-    footer:
-      user.is_alive === 0
-        ? "💀 STATUS • Knocked out. Use /revive to rejoin."
-        : isSafe
-        ? "🛡️ STATUS • Safe active. Immune to all /rob attempts."
-        : "🟢 STATUS • Operational and armed.",
-  });
+  const identityLines = [`Name: <b>${displayName}</b>`];
+  if (genderLabel) {
+    identityLines.push(`Gender: <b>${escapeHtml(genderLabel)}</b>`);
+  }
 
-  await sendMessage(ctx.env.BOT_TOKEN, ctx.chatId, card);
+  const text =
+    `👤 <b>PLAYER PROFILE</b>\n\n` +
+    `${identityLines.join("\n")}\n\n` +
+    `Balance: <b>${formatRupees(user.balance)}</b>\n` +
+    `Bank Savings: <b>${formatRupees(nw.bankSavings)}</b>\n` +
+    `Net Worth: <b>${formatRupees(nw.netWorth)}</b> (${nw.rank.emoji} ${nw.rank.name})\n` +
+    `Kills: <b>${user.kills}</b> • Ammo: <b>${user.ammo}</b>\n` +
+    `Status: ${user.is_alive ? "❤️ Alive" : "💀 Dead"} • Safe: ${
+      safeActive ? "🛡️ Protected" : "⚠️ Exposed"
+    }`;
+
+  await sendMessage(ctx.env.BOT_TOKEN, ctx.chatId, text, undefined, ctx.message?.message_id);
 };
 
 export const profileHandlers: Record<string, CommandHandler> = {

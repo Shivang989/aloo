@@ -1,6 +1,7 @@
 import { getCoreDb, withCoreTransaction } from "./index";
 import { InventoryItem } from "../types/player";
 import { BOT_SETTINGS } from "../settings/bot-settings";
+import { incrementMissionMetricInTx } from "./active-income";
 
 export async function getInventory(userId: number): Promise<InventoryItem[]> {
   const res = await getCoreDb().query(
@@ -79,6 +80,9 @@ export async function buyMarketItemTx(
       [userId, -price, currentBalance, newBalance, idempotencyKey || null, now]
     );
 
+    await incrementMissionMetricInTx(client, userId, "market_purchases", 1, now);
+    await incrementMissionMetricInTx(client, userId, "eligible_activities", 1, now);
+
     return { status: "ok", newBalance, newQuantity };
   });
 }
@@ -123,7 +127,6 @@ export async function giftMarketItemTx(
       [recipientId, cleanRecipientName, BOT_SETTINGS.STARTING_BALANCE, now]
     );
 
-    // Lock both wallet rows in ascending ID order to prevent deadlocks
     const lockRes = await client.query(
       "SELECT user_id, balance FROM users WHERE user_id = ANY($1::bigint[]) ORDER BY user_id ASC FOR UPDATE",
       [[senderId, recipientId]]
@@ -168,6 +171,9 @@ export async function giftMarketItemTx(
        VALUES ($1, 'gift_sent', $2, $3, $4, $5, $6)`,
       [senderId, -price, senderBalance, senderNewBalance, idempotencyKey, now]
     );
+
+    await incrementMissionMetricInTx(client, senderId, "gifts_sent", 1, now);
+    await incrementMissionMetricInTx(client, senderId, "eligible_activities", 1, now);
 
     return { status: "ok", senderNewBalance, recipientNewQuantity };
   });

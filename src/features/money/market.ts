@@ -532,7 +532,6 @@ export async function handleMarketCallback(
         await renderMarketScreen(env.BOT_TOKEN, chatId, cq.message, failText, failMarkup);
         return true;
       }
-
       await answerCallbackQuery(env.BOT_TOKEN, cq.id, `✅ Purchased ${item.name}!`);
       const addedLine =
         item.category === "cars"

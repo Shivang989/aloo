@@ -7,6 +7,15 @@ import { checkRateLimit } from "../database/cache";
 import { handleGroupWelcome } from "../features/start/group-welcome";
 import { handleSafeCallback } from "../features/money/protection";
 import { handleMarketCallback } from "../features/money/market";
+import { handleWorkCallback } from "../features/money/work";
+import { handleDeliveryCallback } from "../features/money/delivery";
+import { handleFreelanceCallback } from "../features/money/freelance";
+import { handleMissionCallback } from "../features/money/missions";
+import { handleBusinessCallback } from "../features/money/business";
+import { handlePropertyCallback } from "../features/money/property";
+import { handleBankCallback } from "../features/money/bank";
+import { handleEconomyCallback } from "../features/money/economy-dashboard";
+import { handleGenderCallback } from "../features/money/gender";
 import { handleDMUICallback } from "../features/dm-menu/callbacks";
 import { handleDMUITextInput } from "../features/dm-menu/text-input";
 import { handleDMUIMediaInput } from "../features/dm-menu/media-input";
@@ -65,6 +74,15 @@ export async function routeTelegramUpdate(
     if (await handleDMUICallback(env, cq)) return;
     if (await handleSafeCallback(env, cq)) return;
     if (await handleMarketCallback(env, cq)) return;
+    if (await handleWorkCallback(env, cq)) return;
+    if (await handleDeliveryCallback(env, cq)) return;
+    if (await handleFreelanceCallback(env, cq)) return;
+    if (await handleMissionCallback(env, cq)) return;
+    if (await handleBusinessCallback(env, cq)) return;
+    if (await handlePropertyCallback(env, cq)) return;
+    if (await handleBankCallback(env, cq)) return;
+    if (await handleEconomyCallback(env, cq)) return;
+    if (await handleGenderCallback(env, cq)) return;
     return;
   }
 

@@ -1,9 +1,13 @@
-# Aloo Bot — Preserved Command Directory
+# Aloo Bot — Command Directory
 
-- **Start & Stats:** `/start`, `/ping`, `/top`, `/leaderboard`
-- **Money & Economy:** `/bal`, `/balance`, `/me`, `/profile`, `/buy`, `/daily`, `/rob`, `/pay`, `/give`, `/safe`, `/inv`, `/inventory`, `/market`, `/sell`
+- **Start & Stats:** `/start`, `/ping`, `/id`, `/top`, `/leaderboard`
+- **Economy & Banking:** `/economy`, `/bal`, `/balance`, `/bank`, `/networth`, `/daily`, `/pay`, `/give`, `/safe`, `/rob`
+- **Active Income & Missions:** `/work`, `/delivery`, `/freelance`, `/mission`, `/weekly`
+- **Businesses & Real Estate:** `/business`, `/property`, `/rent`
+- **Market, Gifts & Inventory:** `/market`, `/gift`, `/buy`, `/sell`, `/inv`, `/inventory`
+- **Player Profile:** `/me`, `/profile`, `/gender`
 - **Battle:** `/fire`, `/shoot`, `/defend`, `/shield`, `/revive`
 - **Games:** `/dice`, `/flip`, `/rps`, `/8ball`
 - **Group Admin:** `/promote`, `/demote`, `/title`, `/admins`
-- **Owner & Moderation:** `/dmui`, `/broadcast`, `/broadcaststop`, `/broadcaststart`, `/add`, `/approved`, `/empty`
+- **Owner & Moderation:** `/transfer`, `/setgender`, `/dmui`, `/broadcast`, `/broadcaststop`, `/broadcaststart`, `/add`, `/approved`, `/empty`
 - **Help:** `/help`

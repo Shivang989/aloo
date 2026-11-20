@@ -1,46 +1,50 @@
-import { toCustomFont } from "../../ui/fancy-text";
-import { BOT_SETTINGS } from "../../settings/bot-settings";
+export const HELP_DIRECTORY_TEXT = `📖 <b>ALOO BOT — COMMAND DIRECTORY</b>
 
-export function buildHelpMessage(): {
+💰 <b>Economy & Banking</b>
+• <code>/economy</code> — Interactive economy hub
+• <code>/bal</code> | <code>/balance</code> — Check wallet balance
+• <code>/bank</code> — Savings account & 0.03%/day interest
+• <code>/networth</code> — Total wealth & rank breakdown
+• <code>/daily</code> — Claim daily reward
+• <code>/pay &lt;amt&gt;</code> | <code>/give &lt;amt&gt;</code> — Transfer money (reply)
+
+💼 <b>Work, Missions & Investments</b>
+• <code>/work</code> — Choose profession & complete shifts
+• <code>/delivery</code> — Accept & complete delivery routes
+• <code>/freelance</code> — Complete freelance contracts
+• <code>/mission</code> | <code>/weekly</code> — Daily & weekly challenges
+• <code>/business</code> — Buy, upgrade & collect business profits
+• <code>/property</code> | <code>/rent</code> — Buy real estate & collect rent
+
+🛍️ <b>Market, Gifts & Inventory</b>
+• <code>/market</code> — Browse Cars, Flowers, Bikes & Food
+• <code>/gift &lt;item&gt;</code> — Gift a market item to a player (reply)
+• <code>/inv</code> | <code>/inventory</code> — View your stash
+• <code>/sell &lt;item&gt;</code> — Sell eligible items
+• <code>/buy &lt;qty&gt;</code> — Purchase bullets
+
+⚔️ <b>Combat & Protection</b>
+• <code>/fire</code> | <code>/shoot</code> — Attack a player (reply)
+• <code>/defend</code> | <code>/shield</code> — Activate combat shield
+• <code>/safe</code> — Buy robbery protection
+• <code>/rob</code> — Rob another player (reply)
+• <code>/revive</code> — Revive when eliminated
+
+👤 <b>Profile, Stats & Arcade</b>
+• <code>/me</code> | <code>/profile</code> — View player profile
+• <code>/gender</code> — Set your optional profile gender
+• <code>/id</code> — View Telegram ID (or replied user ID)
+• <code>/top</code> | <code>/leaderboard</code> — Global leaderboard
+• <code>/dice</code>, <code>/flip</code>, <code>/rps</code>, <code>/8ball</code> — Mini-games
+• <code>/admins</code> — Live Telegram group administrators
+• <code>/ping</code> — Check bot latency`;
+
+export function buildHelpMessage(..._args: unknown[]): {
   body: string;
-  inlineKeyboard: { inline_keyboard: any[][] };
+  inlineKeyboard?: Record<string, any>;
 } {
-  const header = toCustomFont("ALOO COMMAND DIRECTORY");
-  const subheader = toCustomFont("Select a category or use the triggers below:");
-
-  const body =
-    `👑 <b>${header}</b>\n\n` +
-    `<blockquote>${subheader}</blockquote>\n\n` +
-    `💼 <b>${toCustomFont("Economy & Vault")}</b>\n` +
-    `• <code>/b</code> <i>— ${toCustomFont("Check ammo magazine & balance")}</i>\n` +
-    `• <code>/pay</code> <i>— ${toCustomFont("Send cash to an operative")}</i>\n` +
-    `• <code>/rob</code> <i>— ${toCustomFont("Execute an underworld heist")}</i>\n` +
-    `• <code>/daily</code> <i>— ${toCustomFont("Claim 24h syndicate allowance")}</i>\n` +
-    `• <code>/market</code> <i>— ${toCustomFont("Inspect dynamic contraband prices")}</i>\n` +
-    `• <code>/sell</code> <i>— ${toCustomFont("Liquidate owned commodities")}</i>\n\n` +
-    `💥 <b>${toCustomFont("Combat & Defense")}</b>\n` +
-    `• <code>/fire</code> <i>— ${toCustomFont("Engage target with munitions")}</i>\n` +
-    `• <code>/defend</code> <i>— ${toCustomFont("Deploy a temporary 5m shield")}</i>\n` +
-    `• <code>/revive</code> <i>— ${toCustomFont("Recover life after elimination")}</i>\n\n` +
-    `🎲 <b>${toCustomFont("Arcade & Games")}</b>\n` +
-    `• <code>/dice</code>, <code>/flip</code>, <code>/rps</code>, <code>/8ball</code>\n\n` +
-    `🛡️ <b>${toCustomFont("Management & Staff")}</b>\n` +
-    `• <code>/me</code>, <code>/top</code>, <code>/admins</code>, <code>/promote</code>, <code>/demote</code>, <code>/title</code>`;
-
-  const inlineKeyboard = {
-    inline_keyboard: [
-      [
-        {
-          text: toCustomFont("Add to Group"),
-          url: `https://t.me/${BOT_SETTINGS.BOT_USERNAME}?startgroup=true`,
-        },
-        {
-          text: toCustomFont("Direct DM"),
-          url: `https://t.me/${BOT_SETTINGS.BOT_USERNAME}?start=true`,
-        },
-      ],
-    ],
+  return {
+    body: HELP_DIRECTORY_TEXT,
+    inlineKeyboard: undefined,
   };
-
-  return { body, inlineKeyboard };
 }

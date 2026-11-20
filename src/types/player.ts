@@ -7,6 +7,7 @@ export interface UserData {
   is_alive: number;
   protected_until: number;
   last_daily: number;
+  gender?: string | null;
   created_at?: number;
   updated_at?: number;
 }

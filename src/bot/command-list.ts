@@ -13,6 +13,16 @@ import { paymentHandlers } from "../features/money/payments";
 import { inventoryHandlers } from "../features/money/inventory";
 import { marketHandlers } from "../features/money/market";
 import { giftHandlers } from "../features/money/gift";
+import { workHandlers } from "../features/money/work";
+import { deliveryHandlers } from "../features/money/delivery";
+import { freelanceHandlers } from "../features/money/freelance";
+import { missionHandlers } from "../features/money/missions";
+import { businessHandlers } from "../features/money/business";
+import { propertyHandlers } from "../features/money/property";
+import { bankHandlers } from "../features/money/bank";
+import { economyDashboardHandlers } from "../features/money/economy-dashboard";
+import { genderHandlers } from "../features/money/gender";
+import { adminTransferHandlers } from "../features/money/admin-transfer";
 import { shootingHandlers } from "../features/battle/shooting";
 import { defenseHandlers } from "../features/battle/defense";
 import { reviveHandlers } from "../features/battle/revive";
@@ -44,6 +54,16 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   ...inventoryHandlers,
   ...marketHandlers,
   ...giftHandlers,
+  ...workHandlers,
+  ...deliveryHandlers,
+  ...freelanceHandlers,
+  ...missionHandlers,
+  ...businessHandlers,
+  ...propertyHandlers,
+  ...bankHandlers,
+  ...economyDashboardHandlers,
+  ...genderHandlers,
+  ...adminTransferHandlers,
   ...shootingHandlers,
   ...defenseHandlers,
   ...reviveHandlers,
