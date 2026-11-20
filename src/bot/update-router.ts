@@ -6,6 +6,7 @@ import { ensureUserExists, syncUserFirstName } from "../database/users";
 import { checkRateLimit } from "../database/cache";
 import { handleGroupWelcome } from "../features/start/group-welcome";
 import { handleSafeCallback } from "../features/money/protection";
+import { handleMarketCallback } from "../features/money/market";
 import { handleDMUICallback } from "../features/dm-menu/callbacks";
 import { handleDMUITextInput } from "../features/dm-menu/text-input";
 import { handleDMUIMediaInput } from "../features/dm-menu/media-input";
@@ -63,6 +64,7 @@ export async function routeTelegramUpdate(
     if (await handleBroadcastCallback(env, cq)) return;
     if (await handleDMUICallback(env, cq)) return;
     if (await handleSafeCallback(env, cq)) return;
+    if (await handleMarketCallback(env, cq)) return;
     return;
   }
 

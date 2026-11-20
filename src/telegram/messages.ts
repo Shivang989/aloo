@@ -39,6 +39,24 @@ export async function editMessageText(
   return callTelegram(botToken, "editMessageText", payload);
 }
 
+export async function editMessageCaption(
+  botToken: string,
+  chatId: number,
+  messageId: number,
+  caption: string,
+  replyMarkup?: Record<string, any>
+): Promise<TelegramResponse> {
+  const payload: Record<string, any> = {
+    chat_id: chatId,
+    message_id: messageId,
+    caption,
+    parse_mode: "HTML",
+  };
+  if (replyMarkup) payload.reply_markup = replyMarkup;
+
+  return callTelegram(botToken, "editMessageCaption", payload);
+}
+
 export async function editMessageReplyMarkup(
   botToken: string,
   chatId: number,
@@ -94,7 +112,7 @@ export async function sendAnimation(
   animationFileId: string,
   caption?: string,
   replyMarkup?: Record<string, any>
-): Promise<TelegramResponse<{ message_id: number }>> {
+): Promise<TelegramResponse<{ message_id: number; animation?: { file_id: string }; document?: { file_id: string } }>> {
   const payload: Record<string, any> = {
     chat_id: chatId,
     animation: animationFileId,
@@ -104,6 +122,43 @@ export async function sendAnimation(
   if (replyMarkup) payload.reply_markup = replyMarkup;
 
   return callTelegram(botToken, "sendAnimation", payload);
+}
+
+export async function sendAnimationBuffer(
+  botToken: string,
+  chatId: number,
+  gifBuffer: Buffer,
+  fileName: string,
+  caption?: string,
+  replyMarkup?: Record<string, any>
+): Promise<TelegramResponse<{ message_id: number; animation?: { file_id: string }; document?: { file_id: string } }>> {
+  try {
+    const form = new FormData();
+    form.append("chat_id", String(chatId));
+    form.append("animation", new Blob([new Uint8Array(gifBuffer)], { type: "image/gif" }), fileName);
+    if (caption) {
+      form.append("caption", caption);
+      form.append("parse_mode", "HTML");
+    }
+    if (replyMarkup) {
+      form.append("reply_markup", JSON.stringify(replyMarkup));
+    }
+
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendAnimation`, {
+      method: "POST",
+      body: form,
+    });
+    return (await response.json()) as TelegramResponse<{
+      message_id: number;
+      animation?: { file_id: string };
+      document?: { file_id: string };
+    }>;
+  } catch (err: any) {
+    return {
+      ok: false,
+      description: err?.message || "Telegram animation upload failure",
+    };
+  }
 }
 
 export async function deleteMessage(
