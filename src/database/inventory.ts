@@ -83,6 +83,96 @@ export async function buyMarketItemTx(
   });
 }
 
+export async function giftMarketItemTx(
+  senderId: number,
+  recipientId: number,
+  recipientFirstName: string | undefined,
+  itemKey: string,
+  price: number,
+  idempotencyKey: string
+): Promise<
+  | { status: "ok"; senderNewBalance: number; recipientNewQuantity: number }
+  | { status: "insufficient_balance"; balance: number }
+  | { status: "duplicate" }
+> {
+  return withCoreTransaction(async (client) => {
+    const now = Math.floor(Date.now() / 1000);
+
+    const existingKey = await client.query(
+      "SELECT 1 FROM idempotency_keys WHERE key = $1",
+      [idempotencyKey]
+    );
+    if (existingKey.rows.length > 0) {
+      return { status: "duplicate" };
+    }
+
+    await client.query(
+      `INSERT INTO users (user_id, balance, ammo, kills, is_alive, protected_until, last_daily, created_at, updated_at)
+       VALUES ($1, $2, 0, 0, 1, 0, 0, $3, $3)
+       ON CONFLICT (user_id) DO NOTHING`,
+      [senderId, BOT_SETTINGS.STARTING_BALANCE, now]
+    );
+
+    const cleanRecipientName = recipientFirstName?.trim() || null;
+    await client.query(
+      `INSERT INTO users (user_id, first_name, balance, ammo, kills, is_alive, protected_until, last_daily, created_at, updated_at)
+       VALUES ($1, $2, $3, 0, 0, 1, 0, 0, $4, $4)
+       ON CONFLICT (user_id) DO UPDATE SET
+         first_name = COALESCE(EXCLUDED.first_name, users.first_name),
+         updated_at = EXCLUDED.updated_at`,
+      [recipientId, cleanRecipientName, BOT_SETTINGS.STARTING_BALANCE, now]
+    );
+
+    // Lock both wallet rows in ascending ID order to prevent deadlocks
+    const lockRes = await client.query(
+      "SELECT user_id, balance FROM users WHERE user_id = ANY($1::bigint[]) ORDER BY user_id ASC FOR UPDATE",
+      [[senderId, recipientId]]
+    );
+
+    const senderRow = lockRes.rows.find((r) => Number(r.user_id) === senderId);
+    const senderBalance = Number(senderRow?.balance ?? 0);
+
+    if (senderBalance < price) {
+      return { status: "insufficient_balance", balance: senderBalance };
+    }
+
+    const idemInsert = await client.query(
+      `INSERT INTO idempotency_keys (key, operation, status, created_at)
+       VALUES ($1, 'market_gift', 'completed', $2)
+       ON CONFLICT (key) DO NOTHING
+       RETURNING key`,
+      [idempotencyKey, now]
+    );
+    if (idemInsert.rows.length === 0) {
+      return { status: "duplicate" };
+    }
+
+    const balUpd = await client.query(
+      "UPDATE users SET balance = balance - $1, updated_at = $2 WHERE user_id = $3 RETURNING balance",
+      [price, now, senderId]
+    );
+    const senderNewBalance = Number(balUpd.rows[0].balance);
+
+    const invUpd = await client.query(
+      `INSERT INTO inventory (user_id, item_name, quantity)
+       VALUES ($1, $2, 1)
+       ON CONFLICT (user_id, item_name)
+       DO UPDATE SET quantity = inventory.quantity + 1
+       RETURNING quantity`,
+      [recipientId, itemKey]
+    );
+    const recipientNewQuantity = Number(invUpd.rows[0].quantity);
+
+    await client.query(
+      `INSERT INTO economy_transactions (user_id, tx_type, amount, balance_before, balance_after, reference_id, created_at)
+       VALUES ($1, 'gift_sent', $2, $3, $4, $5, $6)`,
+      [senderId, -price, senderBalance, senderNewBalance, idempotencyKey, now]
+    );
+
+    return { status: "ok", senderNewBalance, recipientNewQuantity };
+  });
+}
+
 export async function sellInventoryItemTx(
   userId: number,
   itemKey: string,

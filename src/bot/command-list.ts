@@ -12,6 +12,7 @@ import { dailyRewardHandlers } from "../features/money/daily-reward";
 import { paymentHandlers } from "../features/money/payments";
 import { inventoryHandlers } from "../features/money/inventory";
 import { marketHandlers } from "../features/money/market";
+import { giftHandlers } from "../features/money/gift";
 import { shootingHandlers } from "../features/battle/shooting";
 import { defenseHandlers } from "../features/battle/defense";
 import { reviveHandlers } from "../features/battle/revive";
@@ -42,6 +43,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   ...paymentHandlers,
   ...inventoryHandlers,
   ...marketHandlers,
+  ...giftHandlers,
   ...shootingHandlers,
   ...defenseHandlers,
   ...reviveHandlers,

@@ -57,6 +57,32 @@ export async function editMessageCaption(
   return callTelegram(botToken, "editMessageCaption", payload);
 }
 
+
+export async function editMessageMedia(
+  botToken: string,
+  chatId: number,
+  messageId: number,
+  media: {
+    type: "photo" | "animation" | "video";
+    media: string;
+    caption?: string;
+    parse_mode?: "HTML";
+  },
+  replyMarkup?: Record<string, any>
+): Promise<TelegramResponse> {
+  const payload: Record<string, any> = {
+    chat_id: chatId,
+    message_id: messageId,
+    media: {
+      parse_mode: "HTML",
+      ...media,
+    },
+  };
+  if (replyMarkup) payload.reply_markup = replyMarkup;
+
+  return callTelegram(botToken, "editMessageMedia", payload);
+}
+
 export async function editMessageReplyMarkup(
   botToken: string,
   chatId: number,
