@@ -1,5 +1,5 @@
 import { callTelegram } from "./client";
-import { TelegramResponse } from "./types";
+import { TelegramChatMember, TelegramResponse } from "./types";
 
 export async function getChat(
   botToken: string,
@@ -50,6 +50,27 @@ export async function getChatMember(
     status,
     isMember,
     firstName: res.result?.user?.first_name,
+  };
+}
+
+export async function getChatAdministrators(
+  botToken: string,
+  chatId: string | number
+): Promise<{ ok: boolean; administrators?: TelegramChatMember[]; error?: string }> {
+  const res = await callTelegram<TelegramChatMember[]>(botToken, "getChatAdministrators", {
+    chat_id: chatId,
+  });
+
+  if (!res.ok || !Array.isArray(res.result)) {
+    return {
+      ok: false,
+      error: res.description || "Failed to retrieve chat administrators",
+    };
+  }
+
+  return {
+    ok: true,
+    administrators: res.result,
   };
 }
 

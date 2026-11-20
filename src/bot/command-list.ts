@@ -1,6 +1,7 @@
 import { CommandHandler } from "../types/bot";
 import { startHandlers } from "../features/start/start-command";
 import { pingHandlers } from "../features/stats/ping-command";
+import { idHandlers } from "../features/stats/id-command";
 import { leaderboardHandlers } from "../features/stats/leaderboard";
 import { protectionHandlers } from "../features/money/protection";
 import { balanceHandlers } from "../features/money/balance";
@@ -30,6 +31,7 @@ import { helpHandlers } from "../features/help/help-command";
 export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   ...startHandlers,
   ...pingHandlers,
+  ...idHandlers,
   ...leaderboardHandlers,
   ...protectionHandlers,
   ...balanceHandlers,

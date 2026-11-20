@@ -1,32 +1,102 @@
 import { BotContext, CommandHandler } from "../../types/bot";
-import { getAllAdmins } from "../../database/admins";
-import { createStatusCard } from "../../ui/status-card";
+import { TelegramChatMember } from "../../telegram/types";
+import { getChatAdministrators } from "../../telegram/chats";
 import { sendMessage } from "../../telegram/messages";
+import { escapeHtml } from "../../ui/fancy-text";
+
+function formatAdminMention(member: TelegramChatMember): string {
+  const user = member.user;
+  if (!user || !user.id) {
+    const fallbackLabel = member.custom_title?.trim() || "Anonymous Admin";
+    return escapeHtml(fallbackLabel);
+  }
+
+  if (user.username && user.username.trim().length > 0) {
+    const cleanUsername = user.username.trim().replace(/^@+/, "");
+    return `@${escapeHtml(cleanUsername)}`;
+  }
+
+  const rawName = user.first_name?.trim() || member.custom_title?.trim() || "Anonymous Admin";
+  const safeName = escapeHtml(rawName);
+  return `<a href="tg://user?id=${user.id}">${safeName}</a>`;
+}
 
 export const adminListHandlers: Record<string, CommandHandler> = {
   "/admins": async (ctx: BotContext) => {
-    const admins = await getAllAdmins(ctx.chatId);
-
-    if (!admins || admins.length === 0) {
+    if (ctx.message.chat.type === "private" || ctx.chatId > 0) {
       await sendMessage(
         ctx.env.BOT_TOKEN,
         ctx.chatId,
-        "📋 <b>No custom admins registered in database for this chat.</b>"
+        "⚠️ This command can only be used inside groups and supergroups.",
+        undefined,
+        ctx.message?.message_id
       );
       return;
     }
 
-    const rows = admins.slice(0, 6).map((a) => ({
-      label: `L${a.level} ${a.title ?? "Admin"}`.slice(0, 10),
-      value: `UID: ${a.user_id}`,
-    }));
+    const res = await getChatAdministrators(ctx.env.BOT_TOKEN, ctx.chatId);
 
-    const card = createStatusCard({
-      title: "📋 CHAT ADMINISTRATORS",
-      rows,
-      footer: `Total Active Staff: ${admins.length}`,
-    });
+    if (!res.ok || !res.administrators) {
+      const reason = escapeHtml(res.error || "Telegram API error");
+      await sendMessage(
+        ctx.env.BOT_TOKEN,
+        ctx.chatId,
+        `❌ <b>Unable to fetch group administrators:</b> ${reason}`,
+        undefined,
+        ctx.message?.message_id
+      );
+      return;
+    }
 
-    await sendMessage(ctx.env.BOT_TOKEN, ctx.chatId, card);
+    if (res.administrators.length === 0) {
+      await sendMessage(
+        ctx.env.BOT_TOKEN,
+        ctx.chatId,
+        "⚠️ No administrators were returned for this group.",
+        undefined,
+        ctx.message?.message_id
+      );
+      return;
+    }
+
+    const seenUserIds = new Set<number>();
+    let ownerMention: string | null = null;
+    const adminMentions: string[] = [];
+
+    for (const member of res.administrators) {
+      const uid = member.user?.id;
+      if (uid !== undefined && uid !== null) {
+        if (seenUserIds.has(uid)) continue;
+        seenUserIds.add(uid);
+      }
+
+      const mention = formatAdminMention(member);
+      if (member.status === "creator" && !ownerMention) {
+        ownerMention = mention;
+      } else {
+        adminMentions.push(mention);
+      }
+    }
+
+    const sections: string[] = [];
+
+    if (ownerMention) {
+      sections.push(`👑 <b>Group Owner</b>\n\n1. ${ownerMention}`);
+    }
+
+    if (adminMentions.length > 0) {
+      const formattedAdmins = adminMentions
+        .map((mention, index) => `${index + 1}. ${mention}`)
+        .join("\n");
+      sections.push(`🛡️ <b>Group Administrators</b>\n\n${formattedAdmins}`);
+    }
+
+    await sendMessage(
+      ctx.env.BOT_TOKEN,
+      ctx.chatId,
+      sections.join("\n\n"),
+      undefined,
+      ctx.message?.message_id
+    );
   },
 };

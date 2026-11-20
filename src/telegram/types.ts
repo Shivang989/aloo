@@ -13,6 +13,13 @@ export interface TelegramChat {
   username?: string;
 }
 
+export interface TelegramChatMember {
+  status: "creator" | "administrator" | "member" | "restricted" | "left" | "kicked" | string;
+  user?: TelegramUser;
+  is_anonymous?: boolean;
+  custom_title?: string;
+}
+
 export interface TelegramPhotoSize {
   file_id: string;
   file_unique_id: string;
