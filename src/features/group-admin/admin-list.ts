@@ -88,7 +88,7 @@ export const adminListHandlers: Record<string, CommandHandler> = {
       const formattedAdmins = adminMentions
         .map((mention, index) => `${index + 1}. ${mention}`)
         .join("\n");
-      sections.push(`🛡️ <b>Group Administrators</b>\n\n${formattedAdmins}`);
+      sections.push(`🤝 <b>Cute Admins</b>🫶\n\n${formattedAdmins}`);
     }
 
     await sendMessage(
