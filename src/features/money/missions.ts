@@ -166,9 +166,10 @@ export async function handleMissionCallback(
 
     await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Invalid action.", true);
     return true;
-  } catch (err) {
-    console.error("Mission callback error:", err);
-    await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Mission error.", true);
+  } catch (err: any) {
+    console.error("Mission callback error:", err?.message || err, err);
+    const detail = err?.message ? String(err.message).slice(0, 140) : "Mission error.";
+    await answerCallbackQuery(env.BOT_TOKEN, cq.id, `⚠️ ${detail}`, true);
     return true;
   }
 }

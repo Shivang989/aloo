@@ -312,9 +312,10 @@ export async function handleWorkCallback(
 
     await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Invalid action.", true);
     return true;
-  } catch (err) {
-    console.error("Work callback error:", err);
-    await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Error processing work action.", true);
+  } catch (err: any) {
+    console.error("Work callback error:", err?.message || err, err);
+    const detail = err?.message ? String(err.message).slice(0, 140) : "Error processing work action.";
+    await answerCallbackQuery(env.BOT_TOKEN, cq.id, `⚠️ ${detail}`, true);
     return true;
   }
 }

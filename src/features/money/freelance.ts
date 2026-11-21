@@ -173,9 +173,10 @@ export async function handleFreelanceCallback(
       await sendMessage(env.BOT_TOKEN, chatId, receipt);
     }
     return true;
-  } catch (err) {
-    console.error("Freelance callback error:", err);
-    await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Freelance error.", true);
+  } catch (err: any) {
+    console.error("Freelance callback error:", err?.message || err, err);
+    const detail = err?.message ? String(err.message).slice(0, 140) : "Freelance error.";
+    await answerCallbackQuery(env.BOT_TOKEN, cq.id, `⚠️ ${detail}`, true);
     return true;
   }
 }

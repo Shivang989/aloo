@@ -279,9 +279,10 @@ export async function handlePropertyCallback(
 
     await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Invalid action.", true);
     return true;
-  } catch (err) {
-    console.error("Property callback error:", err);
-    await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Property error.", true);
+  } catch (err: any) {
+    console.error("Property callback error:", err?.message || err, err);
+    const detail = err?.message ? String(err.message).slice(0, 140) : "Property error.";
+    await answerCallbackQuery(env.BOT_TOKEN, cq.id, `⚠️ ${detail}`, true);
     return true;
   }
 }

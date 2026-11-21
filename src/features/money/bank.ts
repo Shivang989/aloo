@@ -281,9 +281,10 @@ export async function handleBankCallback(
 
     await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Invalid action.", true);
     return true;
-  } catch (err) {
-    console.error("Bank callback error:", err);
-    await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Bank error.", true);
+  } catch (err: any) {
+    console.error("Bank callback error:", err?.message || err, err);
+    const detail = err?.message ? String(err.message).slice(0, 140) : "Bank error.";
+    await answerCallbackQuery(env.BOT_TOKEN, cq.id, `⚠️ ${detail}`, true);
     return true;
   }
 }

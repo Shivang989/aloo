@@ -351,9 +351,10 @@ export async function handleBusinessCallback(
 
     await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Invalid action.", true);
     return true;
-  } catch (err) {
-    console.error("Business callback error:", err);
-    await answerCallbackQuery(env.BOT_TOKEN, cq.id, "⚠️ Business error.", true);
+  } catch (err: any) {
+    console.error("Business callback error:", err?.message || err, err);
+    const detail = err?.message ? String(err.message).slice(0, 140) : "Business error.";
+    await answerCallbackQuery(env.BOT_TOKEN, cq.id, `⚠️ ${detail}`, true);
     return true;
   }
 }
