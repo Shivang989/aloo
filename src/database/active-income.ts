@@ -259,7 +259,7 @@ export async function completeWorkShiftTx(
       userId,
       amount: rewardAmount,
       txType: "work_shift",
-      referenceId: professionId,
+      referenceId: `${professionId}:${idempotencyKey}`,
       idempotencyKey,
       enforceDailyActiveCap: true,
       now,
