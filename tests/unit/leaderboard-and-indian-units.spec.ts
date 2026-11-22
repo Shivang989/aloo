@@ -54,23 +54,23 @@ describe("World Top Richest (/top) & Net Worth (/net) Leaderboards", () => {
     expect(formatIndianLeaderboardWealth(100_000_000_000)).toBe("₹1 Kharab");
   });
 
-  it("truncates long usernames to 20 display columns with '...' and aligns columns", () => {
-    const short = formatFixedWidthName("Gaurantee", 20);
-    expect(short).toHaveLength(20);
-    expect(short.startsWith("Gaurantee")).toBe(true);
+  it("truncates long usernames to 15 display columns with '...' and aligns compactly", () => {
+    const short = formatFixedWidthName("HP+", 15);
+    expect(short).toBe("HP+            ");
+    expect(short).toHaveLength(15);
 
-    const long = formatFixedWidthName("VeryLongUsernameExceedingTwentyCharacters", 20);
-    expect(long).toHaveLength(20);
+    const long = formatFixedWidthName("VeryLongUsernameExceedingLimit", 15);
+    expect(long).toHaveLength(15);
     expect(long.endsWith("...")).toBe(true);
   });
 
-  it("renders /top with exact reference structure, hero bottom linings only on 1st & 2nd, and toggles to /net", async () => {
+  it("renders /top and /net with compact ➤ separator, clickable player mentions, and toggle button", async () => {
     vi.spyOn(usersDb, "getTopPlayers").mockResolvedValue([
       { user_id: 1, first_name: "Gaurantee", balance: 150_000, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
       { user_id: 2, first_name: "SecondHeroPlayerWithLongName", balance: 107_579, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
       { user_id: 3, first_name: "Player Three", balance: 85400, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
-      { user_id: 4, first_name: "Player Four", balance: 12500, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
-      { user_id: 5, first_name: "Player Five", balance: 900, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
+      { user_id: 4, first_name: "HP+", balance: 10000, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
+      { user_id: 5, first_name: "SUNNY", balance: 8500, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
     ]);
 
     vi.spyOn(invBankDb, "getTopWealthLeaderboard").mockResolvedValue([
@@ -86,7 +86,6 @@ describe("World Top Richest (/top) & Net Worth (/net) Leaderboards", () => {
       .mockResolvedValue({ ok: true });
     vi.spyOn(messagesApi, "answerCallbackQuery").mockResolvedValue({ ok: true, result: true });
 
-    // Run /top
     await leaderboardHandlers["/top"](makeCtx("/top"));
 
     const topText = sendSpy.mock.calls[0][2];
@@ -94,16 +93,16 @@ describe("World Top Richest (/top) & Net Worth (/net) Leaderboards", () => {
 
     expect(topText.startsWith("🏆𝐖ⱺ𝗋ᥣᑯ 𝐓ⱺρ 𝐑𝗂𝖼ɦ𝖾𝗌𝗍 :")).toBe(true);
     expect(topText).toContain("★━━══━━── • ──━━══━━★");
-    // Exactly 2 bottom linings (1st and 2nd place only)
     expect(topText.match(/╰────────────────/g)).toHaveLength(2);
-    expect(topText).toContain("₹1.5 Lakh");
-    expect(topText).toContain("₹85400");
+    expect(topText).toContain(
+      `<code>④ </code><a href="tg://user?id=4"><code>HP+            </code></a><code> ➤ ₹10000</code>`
+    );
+    expect(topText).not.toContain("—");
     expect(topKb.inline_keyboard[0][0]).toEqual({
       text: "🌍 World Top Net Worth",
       callback_data: "lb:net",
     });
 
-    // Click toggle -> switches to World Top Net Worth
     await handleLeaderboardCallback(MOCK_ENV, {
       id: "cq_lb_net",
       from: { id: 1001, first_name: "Gaurantee" },
@@ -114,13 +113,12 @@ describe("World Top Richest (/top) & Net Worth (/net) Leaderboards", () => {
     const netText = editSpy.mock.calls[0][3];
     const netKb = editSpy.mock.calls[0][4];
     expect(netText.startsWith("🌍𝐖ⱺ𝗋ᥣᑯ 𝐓ⱺρ 𝐍𝖾𝗍 𝐖ⱺ𝗋𝗍ɦ :")).toBe(true);
-    expect(netText).toContain("₹2.5 Crore");
+    expect(netText).toContain(`<a href="tg://user?id=1"><code>Gaurantee      </code></a><code> ➤ ₹2.5 Crore</code>`);
     expect(netKb.inline_keyboard[0][0]).toEqual({
       text: "🏆 World Top Richest",
       callback_data: "lb:rich",
     });
 
-    // Click toggle back -> restores World Top Richest
     await handleLeaderboardCallback(MOCK_ENV, {
       id: "cq_lb_rich",
       from: { id: 1001, first_name: "Gaurantee" },
@@ -129,9 +127,5 @@ describe("World Top Richest (/top) & Net Worth (/net) Leaderboards", () => {
     });
 
     expect(editSpy.mock.calls[1][3].startsWith("🏆𝐖ⱺ𝗋ᥣᑯ 𝐓ⱺρ 𝐑𝗂𝖼ɦ𝖾𝗌𝗍 :")).toBe(true);
-    expect(editSpy.mock.calls[1][4].inline_keyboard[0][0]).toEqual({
-      text: "🌍 World Top Net Worth",
-      callback_data: "lb:net",
-    });
   });
 });

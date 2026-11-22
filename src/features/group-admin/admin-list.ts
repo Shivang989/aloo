@@ -4,7 +4,7 @@ import { getChatAdministrators } from "../../telegram/chats";
 import { sendMessage } from "../../telegram/messages";
 import { escapeHtml } from "../../ui/fancy-text";
 
-function formatAdminEntry(member: TelegramChatMember): string {
+function formatAdminMention(member: TelegramChatMember): string {
   const user = member.user;
   if (!user || !user.id) {
     const fallbackLabel = member.custom_title?.trim() || "Anonymous Admin";
@@ -17,7 +17,8 @@ function formatAdminEntry(member: TelegramChatMember): string {
   }
 
   const rawName = user.first_name?.trim() || member.custom_title?.trim() || "Anonymous Admin";
-  return escapeHtml(rawName);
+  const safeName = escapeHtml(rawName);
+  return `<a href="tg://user?id=${user.id}">${safeName}</a>`;
 }
 
 export const adminListHandlers: Record<string, CommandHandler> = {
@@ -69,7 +70,7 @@ export const adminListHandlers: Record<string, CommandHandler> = {
         seenUserIds.add(uid);
       }
 
-      const formatted = formatAdminEntry(member);
+      const formatted = formatAdminMention(member);
       if (member.status === "creator" && !ownerEntry) {
         ownerEntry = formatted;
       } else {

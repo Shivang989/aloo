@@ -12,8 +12,7 @@ import {
 } from "../../telegram/messages";
 
 const RANK_SYMBOLS = ["🥇", "🥈", "🥉", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"];
-const NAME_COLUMN_WIDTH = 20;
-const WEALTH_COLUMN_WIDTH = 13;
+const NAME_COLUMN_WIDTH = 15;
 
 /**
  * Formats amounts using the Indian Numbering System:
@@ -45,8 +44,10 @@ export function formatIndianLeaderboardWealth(amount: number): string {
 }
 
 function getCharDisplayWidth(ch: string): number {
+  if (/\p{M}/u.test(ch)) {
+    return 0;
+  }
   const cp = ch.codePointAt(0) ?? 0;
-  // Wide emojis & CJK fullwidth ranges occupy 2 columns in monospace terminals
   if (
     cp >= 0x1f300 ||
     (cp >= 0x2600 && cp <= 0x27bf) ||
@@ -62,8 +63,8 @@ function getCharDisplayWidth(ch: string): number {
 }
 
 /**
- * Truncates display names to max 20 display columns (using "..." when truncated)
- * and pads with spaces to a fixed 20-column width for vertical alignment.
+ * Truncates display names to max 15 display columns (using "..." when truncated)
+ * and pads with spaces to a compact fixed width so mobile rows never wrap.
  */
 export function formatFixedWidthName(rawName: string, maxCols: number = NAME_COLUMN_WIDTH): string {
   const clean = (rawName || "Player").replace(/[\r\n\t]+/g, " ").trim() || "Player";
@@ -165,12 +166,12 @@ export function renderLeaderboardMessage(
     const rankSymbol = RANK_SYMBOLS[idx] || `${idx + 1}.`;
     const paddedName = formatFixedWidthName(entry.rawName, NAME_COLUMN_WIDTH);
     const safeName = escapeHtml(paddedName);
-    const formattedWealth = formatIndianLeaderboardWealth(entry.amount).padStart(
-      WEALTH_COLUMN_WIDTH,
-      " "
-    );
+    const formattedWealth = formatIndianLeaderboardWealth(entry.amount);
 
-    rows.push(`<code>${rankSymbol} ${safeName} — ${formattedWealth}</code>`);
+    // Keep <code> inside <a> so Telegram renders both clickable mention and monospace alignment
+    rows.push(
+      `<code>${rankSymbol} </code><a href="tg://user?id=${entry.userId}"><code>${safeName}</code></a><code> ➤ ${formattedWealth}</code>`
+    );
 
     // Exclusive decorative bottom lining ONLY for 1st and 2nd positions
     if (idx === 0 || idx === 1) {

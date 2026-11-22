@@ -38,7 +38,7 @@ describe("Live /admins Directory & /id Command", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders /admins using the exact Group Owner and Cute Admins Unicode design", async () => {
+  it("renders /admins with exact Unicode headings and clickable mentions for all owners and admins", async () => {
     vi.spyOn(chatsApi, "getChatAdministrators").mockResolvedValue({
       ok: true,
       administrators: [
@@ -82,7 +82,7 @@ describe("Live /admins Directory & /id Command", () => {
         `🤝 <b>𝐂υ𝗍𝖾 𝐀ᑯꭑ𝗂𐓣𝗌</b>🫶\n` +
         `──────────\n` +
         `1. @AdminOne\n` +
-        `2. Gaurantee\n` +
+        `2. <a href="tg://user?id=202">Gaurantee</a>\n` +
         `3. Shadow Mod`
     );
   });
