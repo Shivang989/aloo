@@ -16,6 +16,7 @@ import { handlePropertyCallback } from "../features/money/property";
 import { handleBankCallback } from "../features/money/bank";
 import { handleEconomyCallback } from "../features/money/economy-dashboard";
 import { handleGenderCallback } from "../features/money/gender";
+import { handleLeaderboardCallback } from "../features/stats/leaderboard";
 import { handleDMUICallback } from "../features/dm-menu/callbacks";
 import { handleDMUITextInput } from "../features/dm-menu/text-input";
 import { handleDMUIMediaInput } from "../features/dm-menu/media-input";
@@ -83,6 +84,7 @@ export async function routeTelegramUpdate(
     if (await handleBankCallback(env, cq)) return;
     if (await handleEconomyCallback(env, cq)) return;
     if (await handleGenderCallback(env, cq)) return;
+    if (await handleLeaderboardCallback(env, cq)) return;
     return;
   }
 

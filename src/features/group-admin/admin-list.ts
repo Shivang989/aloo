@@ -4,7 +4,7 @@ import { getChatAdministrators } from "../../telegram/chats";
 import { sendMessage } from "../../telegram/messages";
 import { escapeHtml } from "../../ui/fancy-text";
 
-function formatAdminMention(member: TelegramChatMember): string {
+function formatAdminEntry(member: TelegramChatMember): string {
   const user = member.user;
   if (!user || !user.id) {
     const fallbackLabel = member.custom_title?.trim() || "Anonymous Admin";
@@ -17,8 +17,7 @@ function formatAdminMention(member: TelegramChatMember): string {
   }
 
   const rawName = user.first_name?.trim() || member.custom_title?.trim() || "Anonymous Admin";
-  const safeName = escapeHtml(rawName);
-  return `<a href="tg://user?id=${user.id}">${safeName}</a>`;
+  return escapeHtml(rawName);
 }
 
 export const adminListHandlers: Record<string, CommandHandler> = {
@@ -60,8 +59,8 @@ export const adminListHandlers: Record<string, CommandHandler> = {
     }
 
     const seenUserIds = new Set<number>();
-    let ownerMention: string | null = null;
-    const adminMentions: string[] = [];
+    let ownerEntry: string | null = null;
+    const adminEntries: string[] = [];
 
     for (const member of res.administrators) {
       const uid = member.user?.id;
@@ -70,25 +69,25 @@ export const adminListHandlers: Record<string, CommandHandler> = {
         seenUserIds.add(uid);
       }
 
-      const mention = formatAdminMention(member);
-      if (member.status === "creator" && !ownerMention) {
-        ownerMention = mention;
+      const formatted = formatAdminEntry(member);
+      if (member.status === "creator" && !ownerEntry) {
+        ownerEntry = formatted;
       } else {
-        adminMentions.push(mention);
+        adminEntries.push(formatted);
       }
     }
 
     const sections: string[] = [];
 
-    if (ownerMention) {
-      sections.push(`👑 <b>Group Owner</b>\n\n1. ${ownerMention}`);
+    if (ownerEntry) {
+      sections.push(`👑 <b>𝐆𝗋ⱺυρ 𝐎ω𐓣𝖾𝗋</b>\n──────────\n1. ${ownerEntry}`);
     }
 
-    if (adminMentions.length > 0) {
-      const formattedAdmins = adminMentions
-        .map((mention, index) => `${index + 1}. ${mention}`)
+    if (adminEntries.length > 0) {
+      const numberedAdmins = adminEntries
+        .map((entry, index) => `${index + 1}. ${entry}`)
         .join("\n");
-      sections.push(`🤝 <b>Cute Admins</b>🫶\n\n${formattedAdmins}`);
+      sections.push(`🤝 <b>𝐂υ𝗍𝖾 𝐀ᑯꭑ𝗂𐓣𝗌</b>🫶\n──────────\n${numberedAdmins}`);
     }
 
     await sendMessage(

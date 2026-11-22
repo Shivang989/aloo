@@ -38,7 +38,7 @@ describe("Live /admins Directory & /id Command", () => {
     vi.restoreAllMocks();
   });
 
-  it("displays owner separately at top and numbers group administrators cleanly", async () => {
+  it("renders /admins using the exact Group Owner and Cute Admins Unicode design", async () => {
     vi.spyOn(chatsApi, "getChatAdministrators").mockResolvedValue({
       ok: true,
       administrators: [
@@ -48,19 +48,16 @@ describe("Live /admins Directory & /id Command", () => {
         },
         {
           status: "creator",
-          user: { id: 101, first_name: "Owner", username: "OwnerUsername" },
+          user: { id: 101, first_name: "Owner", username: "im_hatee" },
         },
-        // Duplicate admin should be deduplicated
         {
           status: "administrator",
           user: { id: 201, first_name: "AdminOne", username: "AdminOne" },
         },
-        // Admin without username -> clickable first-name mention
         {
           status: "administrator",
-          user: { id: 202, first_name: "NoUser <Admin>" },
+          user: { id: 202, first_name: "Gaurantee" },
         },
-        // Anonymous admin without user object -> safe fallback
         {
           status: "administrator",
           is_anonymous: true,
@@ -78,15 +75,16 @@ describe("Live /admins Directory & /id Command", () => {
     expect(sendSpy).toHaveBeenCalledTimes(1);
     const output = sendSpy.mock.calls[0][2];
 
-    expect(output).toContain("👑 <b>Group Owner</b>\n\n1. @OwnerUsername");
-    expect(output).toContain("🤝 <b>Cute Admins</b>🫶");
-    expect(output).toContain("1. @AdminOne");
-    expect(output).toContain('2. <a href="tg://user?id=202">NoUser &lt;Admin&gt;</a>');
-    expect(output).toContain("3. Shadow Mod");
-    // Ensure duplicate admin was not repeated
-    expect(output.match(/@AdminOne/g)).toHaveLength(1);
-    // Ensure old DB error text is never returned
-    expect(output).not.toContain("No custom admins registered");
+    expect(output).toBe(
+      `👑 <b>𝐆𝗋ⱺυρ 𝐎ω𐓣𝖾𝗋</b>\n` +
+        `──────────\n` +
+        `1. @im_hatee\n\n` +
+        `🤝 <b>𝐂υ𝗍𝖾 𝐀ᑯꭑ𝗂𐓣𝗌</b>🫶\n` +
+        `──────────\n` +
+        `1. @AdminOne\n` +
+        `2. Gaurantee\n` +
+        `3. Shadow Mod`
+    );
   });
 
   it("handles private DMs and Telegram API failures gracefully in /admins", async () => {
@@ -122,7 +120,6 @@ describe("Live /admins Directory & /id Command", () => {
       .spyOn(messagesApi, "sendMessage")
       .mockResolvedValue({ ok: true, result: { message_id: 60 } });
 
-    // Standalone /id
     await idHandlers["/id"](
       makeCtx({
         command: "/id",
@@ -142,7 +139,6 @@ describe("Live /admins Directory & /id Command", () => {
       "👤 Name: Shivang &amp; Co\n🆔 ID: <code>555666777</code>"
     );
 
-    // Reply /id
     await idHandlers["/id"](
       makeCtx({
         command: "/id",

@@ -1,6 +1,6 @@
 # Aloo Bot — Command Directory
 
-- **Start & Stats:** `/start`, `/ping`, `/id`, `/top`, `/leaderboard`
+- **Start & Stats:** `/start`, `/ping`, `/id`, `/top`, `/leaderboard`, `/net`
 - **Economy & Banking:** `/economy`, `/bal`, `/balance`, `/bank`, `/networth`, `/daily`, `/pay`, `/give`, `/safe`, `/rob`
 - **Active Income & Missions:** `/work`, `/delivery`, `/freelance`, `/mission`, `/weekly`
 - **Businesses & Real Estate:** `/business`, `/property`, `/rent`
