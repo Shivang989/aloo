@@ -62,11 +62,10 @@ function getCharDisplayWidth(ch: string): number {
   return 1;
 }
 
-/**
- * Truncates display names to max 15 display columns (using "..." when truncated)
- * and pads with spaces to a compact fixed width so mobile rows never wrap.
- */
-export function formatFixedWidthName(rawName: string, maxCols: number = NAME_COLUMN_WIDTH): string {
+export function splitFixedWidthName(
+  rawName: string,
+  maxCols: number = NAME_COLUMN_WIDTH
+): { displayName: string; paddingSpaces: string } {
   const clean = (rawName || "Player").replace(/[\r\n\t]+/g, " ").trim() || "Player";
   const chars = Array.from(clean);
 
@@ -76,7 +75,10 @@ export function formatFixedWidthName(rawName: string, maxCols: number = NAME_COL
   }
 
   if (totalCols <= maxCols) {
-    return clean + " ".repeat(maxCols - totalCols);
+    return {
+      displayName: clean,
+      paddingSpaces: " ".repeat(maxCols - totalCols),
+    };
   }
 
   const targetCols = maxCols - 3; // Reserve 3 columns for "..."
@@ -89,9 +91,21 @@ export function formatFixedWidthName(rawName: string, maxCols: number = NAME_COL
     usedCols += w;
   }
 
-  const truncated = `${acc}...`;
+  const displayName = `${acc}...`;
   const finalCols = usedCols + 3;
-  return truncated + " ".repeat(Math.max(0, maxCols - finalCols));
+  return {
+    displayName,
+    paddingSpaces: " ".repeat(Math.max(0, maxCols - finalCols)),
+  };
+}
+
+/**
+ * Truncates display names to max 15 display columns (using "..." when truncated)
+ * and pads with spaces to a fixed width.
+ */
+export function formatFixedWidthName(rawName: string, maxCols: number = NAME_COLUMN_WIDTH): string {
+  const { displayName, paddingSpaces } = splitFixedWidthName(rawName, maxCols);
+  return `${displayName}${paddingSpaces}`;
 }
 
 async function resolveRawPlayerName(
@@ -164,13 +178,17 @@ export function renderLeaderboardMessage(
 
   entries.forEach((entry, idx) => {
     const rankSymbol = RANK_SYMBOLS[idx] || `${idx + 1}.`;
-    const paddedName = formatFixedWidthName(entry.rawName, NAME_COLUMN_WIDTH);
-    const safeName = escapeHtml(paddedName);
+    const { displayName, paddingSpaces } = splitFixedWidthName(entry.rawName, NAME_COLUMN_WIDTH);
+    const safeName = escapeHtml(displayName);
     const formattedWealth = formatIndianLeaderboardWealth(entry.amount);
+    const nameLink =
+      Number.isFinite(entry.userId) && entry.userId > 0
+        ? `<a href="tg://user?id=${entry.userId}">${safeName}</a>`
+        : safeName;
 
-    // Keep <code> inside <a> so Telegram renders both clickable mention and monospace alignment
+    // Keep <code> outside <a href="tg://user?id=..."> so Telegram renders a clickable profile mention
     rows.push(
-      `<code>${rankSymbol} </code><a href="tg://user?id=${entry.userId}"><code>${safeName}</code></a><code> ➤ ${formattedWealth}</code>`
+      `<code>${rankSymbol} </code>${nameLink}<code>${paddingSpaces} ➤ ${formattedWealth}</code>`
     );
 
     // Exclusive decorative bottom lining ONLY for 1st and 2nd positions

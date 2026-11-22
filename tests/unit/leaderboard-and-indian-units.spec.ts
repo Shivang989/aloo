@@ -64,7 +64,7 @@ describe("World Top Richest (/top) & Net Worth (/net) Leaderboards", () => {
     expect(long.endsWith("...")).toBe(true);
   });
 
-  it("renders /top and /net with compact ➤ separator, clickable player mentions, and toggle button", async () => {
+  it("renders /top and /net with clickable player mentions (no nested <code> inside <a>) and toggle button", async () => {
     vi.spyOn(usersDb, "getTopPlayers").mockResolvedValue([
       { user_id: 1, first_name: "Gaurantee", balance: 150_000, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
       { user_id: 2, first_name: "SecondHeroPlayerWithLongName", balance: 107_579, ammo: 0, kills: 0, is_alive: 1, protected_until: 0, last_daily: 0 },
@@ -95,9 +95,10 @@ describe("World Top Richest (/top) & Net Worth (/net) Leaderboards", () => {
     expect(topText).toContain("★━━══━━── • ──━━══━━★");
     expect(topText.match(/╰────────────────/g)).toHaveLength(2);
     expect(topText).toContain(
-      `<code>④ </code><a href="tg://user?id=4"><code>HP+            </code></a><code> ➤ ₹10000</code>`
+      `<code>④ </code><a href="tg://user?id=4">HP+</a><code>             ➤ ₹10000</code>`
     );
-    expect(topText).not.toContain("—");
+    expect(topText).not.toContain("</a><code></code>");
+    expect(topText).not.toContain('"><code>');
     expect(topKb.inline_keyboard[0][0]).toEqual({
       text: "🌍 World Top Net Worth",
       callback_data: "lb:net",
@@ -113,7 +114,9 @@ describe("World Top Richest (/top) & Net Worth (/net) Leaderboards", () => {
     const netText = editSpy.mock.calls[0][3];
     const netKb = editSpy.mock.calls[0][4];
     expect(netText.startsWith("🌍𝐖ⱺ𝗋ᥣᑯ 𝐓ⱺρ 𝐍𝖾𝗍 𝐖ⱺ𝗋𝗍ɦ :")).toBe(true);
-    expect(netText).toContain(`<a href="tg://user?id=1"><code>Gaurantee      </code></a><code> ➤ ₹2.5 Crore</code>`);
+    expect(netText).toContain(
+      `<a href="tg://user?id=1">Gaurantee</a><code>       ➤ ₹2.5 Crore</code>`
+    );
     expect(netKb.inline_keyboard[0][0]).toEqual({
       text: "🏆 World Top Richest",
       callback_data: "lb:rich",
