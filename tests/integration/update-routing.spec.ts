@@ -20,14 +20,14 @@ describe("Command Registry & Telegram Update Routing", () => {
     vi.restoreAllMocks();
   });
 
-  it("registers all 39 legacy commands and aliases", () => {
+  it("registers all legacy commands and aliases", () => {
     const expectedCommands = [
       "/start", "/ping", "/top", "/leaderboard",
       "/safe", "/rob", "/bal", "/balance", "/buy", "/daily",
       "/me", "/profile", "/pay", "/give", "/inv", "/inventory",
       "/market", "/sell",
       "/fire", "/shoot", "/defend", "/shield", "/revive",
-      "/dice", "/flip", "/rps", "/8ball",
+      "/flip", "/rps", "/8ball",
       "/promote", "/demote", "/title", "/admins",
       "/dmui", "/broadcast", "/broadcaststop", "/broadcaststart",
       "/add", "/approved", "/empty", "/help",

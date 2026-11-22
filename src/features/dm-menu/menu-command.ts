@@ -24,7 +24,6 @@ export const dmMenuHandlers: Record<string, CommandHandler> = {
       inline_keyboard: [
         [
           { text: "📝 Text", callback_data: "dmui:ask_text" },
-          { text: "🔘 Buttons", callback_data: "dmui:ask_buttons" },
           { text: "🖼 Media", callback_data: "dmui:ask_media" },
         ],
         [{ text: "👁 Live Preview", callback_data: "dmui:preview" }],

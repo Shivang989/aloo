@@ -60,7 +60,6 @@ export async function handleDMUICallback(
         inline_keyboard: [
           [
             { text: "📝 Text", callback_data: "dmui:ask_text" },
-            { text: "🔘 Buttons", callback_data: "dmui:ask_buttons" },
             { text: "🖼 Media", callback_data: "dmui:ask_media" },
           ],
           [{ text: "👁 Live Preview", callback_data: "dmui:preview" }],
@@ -91,36 +90,6 @@ export async function handleDMUICallback(
     return true;
   }
 
-  if (action === "ask_buttons") {
-    await setSetting(DMUI_STATE_KEY, "AWAIT_BUTTONS");
-    await answerCallbackQuery(env.BOT_TOKEN, cq.id);
-
-    const config = (await getSetting<DMUIConfig>(DMUI_CONFIG_KEY)) || {};
-    const currentCode = config.rawButtonsText
-      ? `\n\n<b>Current Buttons:</b>\n<code>${config.rawButtonsText}</code>`
-      : "";
-
-    const guide =
-      `🔘 <b>SET INLINE BUTTONS</b>\n\n` +
-      `Send your button structure using this format:\n\n` +
-      `• <b>Single button (full width):</b>\n` +
-      `<code>Button Title - t.me/example</code>\n\n` +
-      `• <b>Multiple buttons on one line (half width):</b>\n` +
-      `<code>Button 1 - t.me/link1 && Button 2 - t.me/link2</code>\n\n` +
-      `• <b>Special Buttons:</b>\n` +
-      `<code>Alert - alert: Popup message here</code>\n` +
-      `<code>Share - share: Join this awesome bot!</code>\n` +
-      `<code>Help - /help</code>\n` +
-      `<code>Balance - /bal</code>\n\n` +
-      `• <b>Multiple rows:</b> Add each row on a new line.${currentCode}\n\n` +
-      `<i>Send your button layout now, or send <code>/default</code> to restore default buttons.</i>`;
-
-    await editMessageText(env.BOT_TOKEN, chatId, messageId, guide, {
-      inline_keyboard: [[{ text: "🔙 Cancel", callback_data: "dmui:root" }]],
-    });
-    return true;
-  }
-
   if (action === "ask_media") {
     await setSetting(DMUI_STATE_KEY, "AWAIT_MEDIA");
     await answerCallbackQuery(env.BOT_TOKEN, cq.id);
@@ -136,7 +105,7 @@ export async function handleDMUICallback(
     const prompt =
       `🖼 <b>SET DM "/start" MEDIA</b>\n\n` +
       `${status}\n\n` +
-      `• Send any <b>Photo</b>, <b>Video</b>, or <b>GIF</b> directly in this chat to attach it.\n` +
+      `• Send any <b>Photo</b>, <b>Video</b>, or <b>GIF Animation</b> directly in this chat to attach it.\n` +
       `• Send <code>/empty</code> or click below to remove media and use text-only.`;
 
     await editMessageText(env.BOT_TOKEN, chatId, messageId, prompt, {
@@ -180,15 +149,21 @@ export async function handleDMUICallback(
     });
     const kb = compileInlineKeyboard(config.buttonRows || getDefaultButtons());
 
+    let sent = false;
     if (config.mediaFileId && config.mediaType && config.mediaType !== "none") {
       if (config.mediaType === "animation") {
-        await sendAnimation(env.BOT_TOKEN, chatId, config.mediaFileId, text, kb);
+        const res = await sendAnimation(env.BOT_TOKEN, chatId, config.mediaFileId, text, kb);
+        sent = res.ok;
       } else if (config.mediaType === "video") {
-        await sendVideo(env.BOT_TOKEN, chatId, config.mediaFileId, text, kb);
+        const res = await sendVideo(env.BOT_TOKEN, chatId, config.mediaFileId, text, kb);
+        sent = res.ok;
       } else if (config.mediaType === "photo") {
-        await sendPhoto(env.BOT_TOKEN, chatId, config.mediaFileId, text, kb);
+        const res = await sendPhoto(env.BOT_TOKEN, chatId, config.mediaFileId, text, kb);
+        sent = res.ok;
       }
-    } else {
+    }
+
+    if (!sent) {
       await sendMessage(env.BOT_TOKEN, chatId, text, kb);
     }
 

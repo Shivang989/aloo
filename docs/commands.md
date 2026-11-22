@@ -7,7 +7,7 @@
 - **Market, Gifts & Inventory:** `/market`, `/gift`, `/buy`, `/sell`, `/inv`, `/inventory`
 - **Player Profile:** `/me`, `/profile`, `/gender`
 - **Battle:** `/fire`, `/shoot`, `/defend`, `/shield`, `/revive`
-- **Games:** `/dice`, `/flip`, `/rps`, `/8ball`
+- **Games:** `/flip`, `/rps`, `/8ball`
 - **Group Admin:** `/promote`, `/demote`, `/title`, `/admins`
 - **Owner & Moderation:** `/transfer`, `/setgender`, `/dmui`, `/broadcast`, `/broadcaststop`, `/broadcaststart`, `/add`, `/approved`, `/empty`
 - **Help:** `/help`

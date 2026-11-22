@@ -35,7 +35,7 @@ export const HELP_DIRECTORY_TEXT = `📖 <b>ALOO BOT — COMMAND DIRECTORY</b>
 • <code>/gender</code> — Set your optional profile gender
 • <code>/id</code> — View Telegram ID (or replied user ID)
 • <code>/top</code> | <code>/leaderboard</code> — Global leaderboard
-• <code>/dice</code>, <code>/flip</code>, <code>/rps</code>, <code>/8ball</code> — Mini-games
+• <code>/flip</code>, <code>/rps</code>, <code>/8ball</code> — Mini-games
 • <code>/admins</code> — Live Telegram group administrators
 • <code>/ping</code> — Check bot latency`;
 

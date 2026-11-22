@@ -47,19 +47,15 @@ const handleFire: CommandHandler = async (ctx: BotContext) => {
 
     const targetName = escapeHtml(reply.from.first_name || "Target");
     const attackerName = escapeHtml(ctx.message.from?.first_name || "Attacker");
+    const targetMention = `<a href="tg://user?id=${targetId}">${targetName}</a>`;
 
-    const res = await fireAtTargetTx(ctx.userId, targetId);
+    const res = await fireAtTargetTx(
+      ctx.userId,
+      targetId,
+      `fire_upd_${ctx.update.update_id}`
+    );
 
-    if (res.status === "attacker_dead") {
-      await sendMessage(
-        ctx.env.BOT_TOKEN,
-        ctx.chatId,
-        "💀 <b>Incapacitated:</b> You are eliminated. Use <code>/revive</code> before taking action.",
-        undefined,
-        ctx.message?.message_id
-      );
-      return;
-    }
+    if (res.status === "duplicate") return;
 
     if (res.status === "no_ammo") {
       await sendMessage(
@@ -87,7 +83,7 @@ const handleFire: CommandHandler = async (ctx: BotContext) => {
       await sendMessage(
         ctx.env.BOT_TOKEN,
         ctx.chatId,
-        `⚠️ <b>Target Down:</b> ${targetName} is already eliminated.`,
+        `💔 ${targetMention} , already Dead.`,
         undefined,
         ctx.message?.message_id
       );
@@ -104,11 +100,9 @@ const handleFire: CommandHandler = async (ctx: BotContext) => {
     }
 
     const resultText =
-      `🔫 <b>Target Eliminated</b>\n\n` +
-      `Attacker: ${attackerName}\n` +
-      `Target: ${targetName}\n` +
-      `Reward: ₹${res.reward}\n` +
-      `Bullets left: ${res.remainingBullets}`;
+      `ㅤ▄︻̷ ┻ ═━ㅤㅤᴰᵉᵃᵈ\n` +
+      `🎯 ${attackerName} ➜ ${targetName} 😭\n` +
+      `💰 +₹${res.reward} • 🔫 ${res.remainingBullets} Ammo Left`;
 
     await sendMessage(ctx.env.BOT_TOKEN, ctx.chatId, resultText, undefined, ctx.message?.message_id);
   } catch (err: any) {

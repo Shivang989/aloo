@@ -145,19 +145,12 @@ export async function routeTelegramUpdate(
   // 9. Intercept owner inputs for broadcast content creation
   if (await handleBroadcastMessageInput(ctx)) return;
 
-  // 10. Intercept media inputs for DMUI
-  const rawMsg = message as any;
-  const isGifDocument =
-    rawMsg.document &&
-    (rawMsg.document.mime_type === "image/gif" ||
-      (rawMsg.document.file_name && rawMsg.document.file_name.toLowerCase().endsWith(".gif")));
-
-  if (rawMsg.photo || rawMsg.video || rawMsg.animation || isGifDocument) {
-    if (await handleDMUIMediaInput(ctx)) return;
-  }
-
+  // 10. Intercept non-text media inputs for DMUI (photos, videos, GIFs, or unsupported media error)
   const rawText = message.text?.trim();
-  if (!rawText) return;
+  if (!rawText) {
+    await handleDMUIMediaInput(ctx);
+    return;
+  }
 
   // 11. Intercept DMUI text setup
   if (await handleDMUITextInput(ctx)) return;

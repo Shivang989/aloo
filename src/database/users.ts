@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { getCoreDb, withCoreTransaction } from "./index";
 import { UserData } from "../types/player";
 import { BOT_SETTINGS } from "../settings/bot-settings";
@@ -379,17 +380,32 @@ export async function transferMoneyTx(
 
 export async function fireAtTargetTx(
   attackerId: number,
-  targetId: number
+  targetId: number,
+  idempotencyKey?: string
 ): Promise<
   | { status: "eliminated"; reward: number; remainingBullets: number }
-  | { status: "attacker_dead" }
   | { status: "no_ammo" }
   | { status: "target_not_found" }
   | { status: "target_dead" }
   | { status: "target_protected"; remainingBullets: number }
+  | { status: "duplicate" }
 > {
   return withCoreTransaction(async (client) => {
     const now = Math.floor(Date.now() / 1000);
+
+    if (idempotencyKey) {
+      const idemRes = await client.query(
+        `INSERT INTO idempotency_keys (key, operation, status, created_at)
+         VALUES ($1, 'fire_kill', 'completed', $2)
+         ON CONFLICT (key) DO NOTHING
+         RETURNING key`,
+        [idempotencyKey, now]
+      );
+      if (idemRes.rows.length === 0) {
+        return { status: "duplicate" };
+      }
+    }
+
     await client.query(
       `INSERT INTO users (user_id, balance, ammo, kills, is_alive, protected_until, last_daily, created_at, updated_at)
        VALUES ($1, $2, 0, 0, 1, 0, 0, $3, $3)
@@ -405,10 +421,8 @@ export async function fireAtTargetTx(
     const attackerRow = lockRes.rows.find((r) => Number(r.user_id) === attackerId);
     const targetRow = lockRes.rows.find((r) => Number(r.user_id) === targetId);
 
-    if (!attackerRow || Number(attackerRow.is_alive) === 0) {
-      return { status: "attacker_dead" };
-    }
-    if (Number(attackerRow.ammo ?? 0) <= 0) {
+    // Dead shooters are allowed to /fire; check ammo and target state
+    if (!attackerRow || Number(attackerRow.ammo ?? 0) <= 0) {
       return { status: "no_ammo" };
     }
     if (!targetRow) {
@@ -429,7 +443,8 @@ export async function fireAtTargetTx(
       return { status: "target_protected", remainingBullets };
     }
 
-    const reward = Math.floor(Math.random() * (300 - 200 + 1)) + 200;
+    // Server-side uniform integer reward in [200, 300] inclusive
+    const reward = crypto.randomInt(200, 301);
     const attackerBal = Number(attackerRow.balance ?? 0);
 
     await client.query("UPDATE users SET is_alive = 0, updated_at = $1 WHERE user_id = $2", [
@@ -442,9 +457,9 @@ export async function fireAtTargetTx(
     );
 
     await client.query(
-      `INSERT INTO economy_transactions (user_id, tx_type, amount, balance_before, balance_after, created_at)
-       VALUES ($1, 'kill_reward', $2, $3, $4, $5)`,
-      [attackerId, reward, attackerBal, attackerBal + reward, now]
+      `INSERT INTO economy_transactions (user_id, tx_type, amount, balance_before, balance_after, reference_id, created_at)
+       VALUES ($1, 'kill_reward', $2, $3, $4, $5, $6)`,
+      [attackerId, reward, attackerBal, attackerBal + reward, idempotencyKey || null, now]
     );
 
     return { status: "eliminated", reward, remainingBullets };
@@ -496,43 +511,92 @@ export async function deployShieldTx(
 }
 
 export async function revivePlayerTx(
-  userId: number,
-  cost: number
+  payerId: number,
+  cost: number,
+  targetId: number = payerId,
+  idempotencyKey?: string
 ): Promise<
-  | { status: "ok"; newBalance: number }
-  | { status: "not_found" }
+  | { status: "ok"; payerNewBalance: number }
+  | { status: "target_not_found" }
   | { status: "already_alive" }
-  | { status: "insufficient_balance" }
+  | { status: "insufficient_balance"; payerBalance: number }
+  | { status: "duplicate" }
 > {
   return withCoreTransaction(async (client) => {
     const now = Math.floor(Date.now() / 1000);
-    const rowRes = await client.query(
-      "SELECT balance, is_alive FROM users WHERE user_id = $1 FOR UPDATE",
-      [userId]
-    );
-    if (rowRes.rows.length === 0) return { status: "not_found" };
 
-    const balance = Number(rowRes.rows[0].balance ?? 0);
-    const isAlive = Number(rowRes.rows[0].is_alive ?? 1);
-
-    if (isAlive === 1) return { status: "already_alive" };
-    if (balance < cost) return { status: "insufficient_balance" };
-
-    const upd = await client.query(
-      `UPDATE users
-       SET balance = balance - $1, is_alive = 1, updated_at = $2
-       WHERE user_id = $3
-       RETURNING balance`,
-      [cost, now, userId]
-    );
-    const newBalance = Number(upd.rows[0].balance);
+    if (idempotencyKey) {
+      const idemRes = await client.query(
+        `INSERT INTO idempotency_keys (key, operation, status, created_at)
+         VALUES ($1, 'revive_purchase', 'completed', $2)
+         ON CONFLICT (key) DO NOTHING
+         RETURNING key`,
+        [idempotencyKey, now]
+      );
+      if (idemRes.rows.length === 0) {
+        return { status: "duplicate" };
+      }
+    }
 
     await client.query(
-      `INSERT INTO economy_transactions (user_id, tx_type, amount, balance_before, balance_after, created_at)
-       VALUES ($1, 'revive_purchase', $2, $3, $4, $5)`,
-      [userId, -cost, balance, newBalance, now]
+      `INSERT INTO users (user_id, balance, ammo, kills, is_alive, protected_until, last_daily, created_at, updated_at)
+       VALUES ($1, $2, 0, 0, 1, 0, 0, $3, $3)
+       ON CONFLICT (user_id) DO NOTHING`,
+      [payerId, BOT_SETTINGS.STARTING_BALANCE, now]
     );
 
-    return { status: "ok", newBalance };
+    const idsToLock = payerId === targetId ? [payerId] : [payerId, targetId];
+    const lockRes = await client.query(
+      "SELECT user_id, balance, is_alive FROM users WHERE user_id = ANY($1::bigint[]) ORDER BY user_id ASC FOR UPDATE",
+      [idsToLock]
+    );
+
+    const payerRow = lockRes.rows.find((r) => Number(r.user_id) === payerId);
+    const targetRow = lockRes.rows.find((r) => Number(r.user_id) === targetId);
+
+    if (!targetRow) {
+      return { status: "target_not_found" };
+    }
+
+    const targetIsAlive = Number(targetRow.is_alive ?? 1) !== 0;
+    if (targetIsAlive) {
+      return { status: "already_alive" };
+    }
+
+    const payerBalance = Number(payerRow?.balance ?? 0);
+    if (payerBalance < cost) {
+      return { status: "insufficient_balance", payerBalance };
+    }
+
+    const payerUpd = await client.query(
+      `UPDATE users
+       SET balance = balance - $1, updated_at = $2
+       WHERE user_id = $3
+       RETURNING balance`,
+      [cost, now, payerId]
+    );
+    const payerNewBalance = Number(payerUpd.rows[0].balance);
+
+    await client.query(
+      `UPDATE users
+       SET is_alive = 1, updated_at = $1
+       WHERE user_id = $2`,
+      [now, targetId]
+    );
+
+    await client.query(
+      `INSERT INTO economy_transactions (user_id, tx_type, amount, balance_before, balance_after, reference_id, created_at)
+       VALUES ($1, 'revive_purchase', $2, $3, $4, $5, $6)`,
+      [
+        payerId,
+        -cost,
+        payerBalance,
+        payerNewBalance,
+        idempotencyKey || `revive_target_${targetId}`,
+        now,
+      ]
+    );
+
+    return { status: "ok", payerNewBalance };
   });
 }

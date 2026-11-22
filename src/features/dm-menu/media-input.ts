@@ -15,34 +15,38 @@ export async function handleDMUIMediaInput(ctx: BotContext): Promise<boolean> {
     let mediaType: "photo" | "video" | "animation" | null = null;
     let fileId: string | null = null;
 
-    if (msg.animation) {
+    // Prefer native Telegram animation (GIF) first before document fallback
+    if (msg.animation?.file_id) {
       mediaType = "animation";
-      fileId = msg.animation.file_id;
+      fileId = String(msg.animation.file_id);
     } else if (
-      msg.document &&
+      msg.document?.file_id &&
       (msg.document.mime_type === "image/gif" ||
-        (msg.document.file_name && msg.document.file_name.toLowerCase().endsWith(".gif")))
+        (typeof msg.document.file_name === "string" &&
+          msg.document.file_name.toLowerCase().endsWith(".gif")))
     ) {
       mediaType = "animation";
-      fileId = msg.document.file_id;
-    } else if (msg.photo && msg.photo.length > 0) {
+      fileId = String(msg.document.file_id);
+    } else if (Array.isArray(msg.photo) && msg.photo.length > 0) {
       mediaType = "photo";
-      fileId = msg.photo[msg.photo.length - 1].file_id;
-    } else if (msg.video) {
+      fileId = String(msg.photo[msg.photo.length - 1].file_id);
+    } else if (msg.video?.file_id) {
       mediaType = "video";
-      fileId = msg.video.file_id;
+      fileId = String(msg.video.file_id);
     }
 
     if (!mediaType || !fileId) {
       await sendMessage(
         ctx.env.BOT_TOKEN,
         ctx.chatId,
-        "⚠️ Unsupported media format. Please send a <b>Photo</b>, <b>Video</b>, or <b>GIF</b>."
+        "⚠️ Unsupported media format. Please send a <b>Photo</b>, <b>Video</b>, or <b>GIF Animation</b>.",
+        { inline_keyboard: [[{ text: "🔙 Cancel", callback_data: "dmui:root" }]] }
       );
       return true;
     }
 
-    const config = (await getSetting<DMUIConfig>(DMUI_CONFIG_KEY)) || {};
+    const rawConfig = await getSetting<DMUIConfig>(DMUI_CONFIG_KEY);
+    const config: DMUIConfig = rawConfig && typeof rawConfig === "object" ? { ...rawConfig } : {};
     config.mediaType = mediaType;
     config.mediaFileId = fileId;
 

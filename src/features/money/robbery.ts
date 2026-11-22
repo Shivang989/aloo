@@ -67,7 +67,7 @@ export const robberyHandlers: Record<string, CommandHandler> = {
         await sendMessage(
           ctx.env.BOT_TOKEN,
           ctx.chatId,
-          "💀 You are eliminated. Revive first using <code>/revive</code>.",
+          "💀 You must be alive to rob another player. Revive first using <code>/revive</code>.",
           undefined,
           ctx.message?.message_id
         );

@@ -26,7 +26,6 @@ import { adminTransferHandlers } from "../features/money/admin-transfer";
 import { shootingHandlers } from "../features/battle/shooting";
 import { defenseHandlers } from "../features/battle/defense";
 import { reviveHandlers } from "../features/battle/revive";
-import { diceHandlers } from "../features/games/dice";
 import { coinFlipHandlers } from "../features/games/coin-flip";
 import { rpsHandlers } from "../features/games/rock-paper-scissors";
 import { eightBallHandlers } from "../features/games/eight-ball";
@@ -67,7 +66,6 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   ...shootingHandlers,
   ...defenseHandlers,
   ...reviveHandlers,
-  ...diceHandlers,
   ...coinFlipHandlers,
   ...rpsHandlers,
   ...eightBallHandlers,

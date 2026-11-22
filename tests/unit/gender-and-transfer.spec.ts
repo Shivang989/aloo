@@ -307,7 +307,7 @@ describe("Phase 5, 6 & 7 — Gender, Owner /transfer, Profile & Regression", () 
       "/business", "/property", "/rent", "/bank", "/networth",
       "/gender", "/setgender", "/transfer",
       "/fire", "/shoot", "/defend", "/shield", "/revive",
-      "/dice", "/flip", "/rps", "/8ball",
+      "/flip", "/rps", "/8ball",
       "/promote", "/demote", "/title", "/admins",
       "/dmui", "/broadcast", "/broadcaststop", "/broadcaststart",
       "/add", "/approved", "/empty", "/help",

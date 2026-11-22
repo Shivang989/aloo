@@ -79,7 +79,7 @@ describe("Live /admins Directory & /id Command", () => {
     const output = sendSpy.mock.calls[0][2];
 
     expect(output).toContain("👑 <b>Group Owner</b>\n\n1. @OwnerUsername");
-    expect(output).toContain("🛡️ <b>Group Administrators</b>");
+    expect(output).toContain("🤝 <b>Cute Admins</b>🫶");
     expect(output).toContain("1. @AdminOne");
     expect(output).toContain('2. <a href="tg://user?id=202">NoUser &lt;Admin&gt;</a>');
     expect(output).toContain("3. Shadow Mod");

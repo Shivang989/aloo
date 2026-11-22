@@ -3,12 +3,33 @@ import { ensureUserExists, getUser } from "../../database/users";
 import { toFancy, escapeHtml } from "../../ui/fancy-text";
 import { sendMessage } from "../../telegram/messages";
 
+function formatBalanceCard(params: {
+  userId: number;
+  rawName: string;
+  isAlive: boolean;
+  balance: number;
+  kills: number;
+  ammo: number;
+}): string {
+  const safeName = escapeHtml(params.rawName || "Player");
+  const mention = `<a href="tg://user?id=${params.userId}">${safeName}</a>`;
+  const statusFancy = toFancy(params.isAlive ? "Alive" : "Dead");
+
+  return (
+    `🥰 ${mention} (${statusFancy})\n` +
+    `💸 𝐁αᥣα𐓣𝖼𝖾: ₹${params.balance}\n` +
+    `☠️ 𝐊𝗂ᥣᥣ𝗌: ${params.kills}\n` +
+    `🔫 𝐀ꭑꭑⱺ: ${params.ammo}\n` +
+    `||▄︻ ┻ ═━=||`
+  );
+}
+
 const handleBalance: CommandHandler = async (ctx: BotContext) => {
   try {
     const reply = ctx.reply;
 
-    if (reply) {
-      if (!reply.from || reply.from.is_bot) {
+    if (reply && reply.from && reply.from.id !== ctx.userId) {
+      if (reply.from.is_bot) {
         await sendMessage(
           ctx.env.BOT_TOKEN,
           ctx.chatId,
@@ -20,56 +41,43 @@ const handleBalance: CommandHandler = async (ctx: BotContext) => {
       }
 
       const targetId = reply.from.id;
+      const targetUser = await getUser(targetId);
 
-      if (targetId !== ctx.userId) {
-        const targetUser = await getUser(targetId);
-
-        if (!targetUser) {
-          await sendMessage(
-            ctx.env.BOT_TOKEN,
-            ctx.chatId,
-            "❌ Player profile not found.",
-            undefined,
-            ctx.message?.message_id
-          );
-          return;
-        }
-
-        const targetName = escapeHtml(reply.from.first_name || "Player");
-        const targetMention = `<a href="tg://user?id=${targetId}">${targetName}</a>`;
-        const isAlive = (targetUser.is_alive ?? 1) !== 0;
-        const status = toFancy(isAlive ? "(Alive)" : "(Dead)");
-
-        const balance = toFancy(`₹${targetUser.balance ?? 0}`);
-        const kills = toFancy(String(targetUser.kills ?? 0));
-
-        const text =
-          `👤 ${targetMention} ${status}\n` +
-          `💵 ${toFancy("Balance:")} ${balance}\n` +
-          `☠️ ${toFancy("Kills:")} ${kills}`;
-
-        await sendMessage(ctx.env.BOT_TOKEN, ctx.chatId, text, undefined, ctx.message?.message_id);
+      if (!targetUser) {
+        await sendMessage(
+          ctx.env.BOT_TOKEN,
+          ctx.chatId,
+          "❌ Player profile not found.",
+          undefined,
+          ctx.message?.message_id
+        );
         return;
       }
+
+      const text = formatBalanceCard({
+        userId: targetId,
+        rawName: reply.from.first_name || targetUser.first_name || "Player",
+        isAlive: (targetUser.is_alive ?? 1) !== 0,
+        balance: targetUser.balance ?? 0,
+        kills: targetUser.kills ?? 0,
+        ammo: targetUser.ammo ?? 0,
+      });
+
+      await sendMessage(ctx.env.BOT_TOKEN, ctx.chatId, text, undefined, ctx.message?.message_id);
+      return;
     }
 
-    await ensureUserExists(ctx.userId);
+    await ensureUserExists(ctx.userId, ctx.message.from?.first_name);
     const user = await getUser(ctx.userId);
 
-    const senderName = escapeHtml(ctx.message.from?.first_name || "Player");
-    const mention = `<a href="tg://user?id=${ctx.userId}">${senderName}</a>`;
-    const isAlive = (user?.is_alive ?? 1) !== 0;
-    const status = toFancy(isAlive ? "(Alive)" : "(Dead)");
-
-    const balance = toFancy(`₹${user?.balance ?? 0}`);
-    const kills = toFancy(String(user?.kills ?? 0));
-    const bullets = toFancy(String(user?.ammo ?? 0));
-
-    const text =
-      `👤 ${mention} ${status}\n` +
-      `💵 ${toFancy("Balance:")} ${balance}\n` +
-      `☠️ ${toFancy("Kills:")} ${kills}\n` +
-      `🔫 ${toFancy("Bullets:")} ${bullets}`;
+    const text = formatBalanceCard({
+      userId: ctx.userId,
+      rawName: ctx.message.from?.first_name || user?.first_name || "Player",
+      isAlive: (user?.is_alive ?? 1) !== 0,
+      balance: user?.balance ?? 0,
+      kills: user?.kills ?? 0,
+      ammo: user?.ammo ?? 0,
+    });
 
     await sendMessage(ctx.env.BOT_TOKEN, ctx.chatId, text, undefined, ctx.message?.message_id);
   } catch (err: any) {
